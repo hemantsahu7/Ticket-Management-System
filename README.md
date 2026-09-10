@@ -41,6 +41,8 @@ VITE_API_URL=http://localhost:8080
 PORT=80
 ```
 
+Both lines are required. `PORT=80` is the port used **inside** the frontend container; you still open the website at `http://localhost:3000` because Docker maps port 3000 on your computer to port 80 in the container.
+
 > On Windows, make sure the files are named `.env`, not `.env.txt`. If File Explorer hides extensions, enable **View → File name extensions** before creating them.
 
 ### 3. Start the application
@@ -70,6 +72,21 @@ Press `Ctrl+C` in the terminal that is running Docker. To remove the stopped con
 
 ```bash
 docker compose down
+```
+
+### If the frontend exits with `host not found in "${PORT}"`
+
+Open `frontend/.env` and confirm it contains this line:
+
+```env
+PORT=80
+```
+
+Then restart the containers:
+
+```bash
+docker compose down
+docker compose up
 ```
 
 ## Run only the backend API with Docker
