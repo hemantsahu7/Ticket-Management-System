@@ -1,0 +1,8 @@
+./atomic_386.go
+./doc.go
+./linkname.go
+./stubs.go
+./types.go
+./unaligned.go
+./xchg8.go
+./atomic_386.s

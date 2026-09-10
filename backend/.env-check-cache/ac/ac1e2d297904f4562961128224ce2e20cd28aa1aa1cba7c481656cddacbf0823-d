@@ -1,0 +1,3 @@
+./database.go
+./env.go
+./main.go

@@ -1,0 +1,13 @@
+.env
+backend/.env
+frontend/.env
+backend/.gocache/
+backend/ticket-system.exe
+backend/sqlite-check.exe
+backend/gin-check.exe
+backend/.gin-build-cache/
+backend/simple-check.exe
+backend/.simple-build-cache/
+backend/.go-build-cache/
+frontend/node_modules/
+frontend/dist/
