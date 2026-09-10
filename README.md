@@ -1,121 +1,119 @@
-# Ticket System
+# Ticket Management System
 
-A deliberately small ticket system with a Gin backend and React frontend. The backend uses SQLite's in-memory database, so data resets when it restarts.
+A small ticket-management application with a React frontend and a Go (Gin) backend. You can create an account, sign in, create tickets, and move your own tickets through their allowed statuses.
 
-## Project structure
+## Try the live application
 
+- **Frontend:** [Open Ticket Management System](https://ticket-management-system-1-y5ah.onrender.com/)
+- **Backend health check:** [Open API health check](https://ticket-management-system-6uhd.onrender.com/health)
+
+The live backend uses temporary in-memory SQLite storage. Its data is cleared whenever the backend restarts.
+
+## What you need to run it locally
+
+1. Install [Docker Desktop](https://www.docker.com/products/docker-desktop/).
+2. Start Docker Desktop and wait until it says Docker is running.
+3. Download or clone this project.
+
+You do **not** need to install Go, Node.js, or npm when using Docker.
+
+## Run the complete project with Docker
+
+Open a terminal in the main project folder (the folder containing `docker-compose.yml`). Before running Docker, manually create these two files. Do not commit them to Git.
+
+### 1. Create `backend/.env`
+
+Create a new file named exactly `.env` inside the `backend` folder. Paste this into it:
+
+```env
+PORT=8080
+JWT_SECRET=replace-this-with-a-long-random-secret
 ```
-backend/   Go, Gin, SQLite, Docker
-frontend/  React and React Router client
+
+Replace the `JWT_SECRET` value with a long private value of your choice. Do not share it publicly.
+
+### 2. Create `frontend/.env`
+
+Create a new file named exactly `.env` inside the `frontend` folder. Paste this into it:
+
+```env
+VITE_API_URL=http://localhost:8080
+PORT=80
 ```
 
-## Run the API
+> On Windows, make sure the files are named `.env`, not `.env.txt`. If File Explorer hides extensions, enable **View → File name extensions** before creating them.
 
-```powershell
-cd backend
-Copy-Item .env.example .env
-# Edit .env and set JWT_SECRET before the first run.
-go run .
-```
+### 3. Start the application
 
-It listens on `http://localhost:8080`. Check it with `curl http://localhost:8080/health`.
-
-## Run with Docker
-
-To run the backend only (the assignment's Docker flow), run these commands:
+In the main project folder, run:
 
 ```bash
-cd backend
-cp .env.example .env # Set JWT_SECRET in .env first.
-docker build -t ticket-system .
-docker run --rm --env-file .env -p 8080:8080 ticket-system
-curl http://localhost:8080/health
-```
-
-To run both the backend and frontend together:
-
-```bash
-cp backend/.env.example backend/.env  # Set JWT_SECRET in this file.
-cp frontend/.env.example frontend/.env
 docker compose up --build
 ```
 
-Then open the frontend at `http://localhost:3000`. The API health check is at `http://localhost:8080/health`.
+The first run can take a few minutes because Docker downloads the required images.
 
-To stop both containers, press `Ctrl+C`, or run `docker compose down` in another terminal.
+When the log messages stop showing errors, open:
 
-## Run the React client
+- Frontend: [http://localhost:3000](http://localhost:3000)
+- Backend health check: [http://localhost:8080/health](http://localhost:8080/health)
 
-```powershell
-cd frontend
-npm.cmd install
-Copy-Item .env.example .env
-npm.cmd run dev
+You should see this health response:
+
+```json
+{"status":"ok"}
 ```
 
-For a deployed API, use its URL instead.
+### Stop the application
 
-## Deploy on Render with Docker
+Press `Ctrl+C` in the terminal that is running Docker. To remove the stopped containers, run:
 
-Deploy the two folders as two **Docker Web Services** from the same GitHub repository. Do not deploy `docker-compose.yml` directly; Render builds each service from its own Dockerfile.
+```bash
+docker compose down
+```
 
-### 1. Deploy the backend
+## Run only the backend API with Docker
 
-Create a new **Web Service** and set:
+Use this when you only want to test the assignment API without the React website.
 
-| Render field | Value |
-| --- | --- |
-| Language | Docker |
-| Root Directory | `backend` |
-| Dockerfile Path | `Dockerfile` |
-| Docker Build Context Directory | `.` |
-| Health Check Path | `/health` |
+```bash
+cd backend
+docker build -t ticket-system .
+docker run --rm --env-file .env -p 8080:8080 ticket-system
+```
 
-Set these environment variables in Render (not in Git):
+Then visit [http://localhost:8080/health](http://localhost:8080/health).
+
+## Features
+
+- Register and sign in with email and password
+- Passwords are stored securely as bcrypt hashes
+- JWT-protected ticket APIs
+- Users can see and update only their own tickets
+- Ticket status flow: `open` → `in_progress` → `closed`
+- Closed tickets cannot be reopened
+
+## API reference
+
+All ticket endpoints require this request header after sign-in:
 
 ```text
-PORT=10000
-JWT_SECRET=a-long-random-secret
+Authorization: Bearer <token>
 ```
 
-Deploy it, open its public URL, and confirm `<backend-url>/health` returns `{"status":"ok"}`.
-
-### 2. Deploy the frontend
-
-Create another **Web Service** and set:
-
-| Render field | Value |
-| --- | --- |
-| Language | Docker |
-| Root Directory | `frontend` |
-| Dockerfile Path | `Dockerfile` |
-| Docker Build Context Directory | `.` |
-
-Set these Render environment variables:
-
-```text
-PORT=10000
-VITE_API_URL=https://your-backend-name.onrender.com
-```
-
-Deploy the frontend. Render makes `VITE_API_URL` available as a Docker build argument, so it is embedded in the React build. Redeploy the frontend whenever that API URL changes.
-
-## API
-
-`POST /auth/register` and `POST /auth/login` accept `{"email":"user@example.com","password":"password"}`. Login returns `{"token":"..."}`. All ticket routes require `Authorization: Bearer <token>`.
-
-| Method | Path | Body |
+| Method | Endpoint | Purpose |
 | --- | --- | --- |
-| GET | `/health` | — |
-| POST | `/auth/register` | email, password |
-| POST | `/auth/login` | email, password |
-| POST | `/tickets` | title, description (optional) |
-| GET | `/tickets` | — |
-| GET | `/tickets/{id}` | — |
-| PATCH | `/tickets/{id}/status` | status |
+| GET | `/health` | Check whether the backend is running |
+| POST | `/auth/register` | Create a user account |
+| POST | `/auth/login` | Sign in and receive a JWT token |
+| POST | `/tickets` | Create a ticket |
+| GET | `/tickets` | List the signed-in user's tickets |
+| GET | `/tickets/{id}` | Get one of the signed-in user's tickets |
+| PATCH | `/tickets/{id}/status` | Change a ticket's status |
 
-Ticket statuses can only move from `open` to `in_progress`, then from `in_progress` to `closed`. A ticket is never returned or changed for another user.
+## Project structure
 
-## Deployment
-
-The Dockerfile is ready for any Docker-compatible free host (for example Render, Railway, or Fly.io). Set `JWT_SECRET` in the host's environment settings and publish port `8080`. Add the deployed API URL and public `/health` URL here before submission.
+```text
+backend/   Go, Gin, SQLite, Docker
+frontend/  React, React Router, Nginx, Docker
+```
